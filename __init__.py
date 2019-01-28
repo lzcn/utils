@@ -12,8 +12,8 @@ from .datafile import resize_image
 # mode progress
 from .progress import ProgressBar
 # mode transfer
-from .meter import TrainMeter, TestMeter, MovingAverage, smooth
-from .tracer import Tracer
+from .meter import GlobalMeter, MovingAverage, smooth
+from .tracer import Tracer, GlobalTracer
 
 _COLORS = dict(
     Red='\033[91m',
@@ -135,16 +135,17 @@ def config_log(stream_level='DEBUG', file_level='INFO', log_file=None):
     return log_file
 
 
-__all__ = ['metrics',
-           'math',
-           'check_dirs',
-           'MovingAverage',
-           'resize_image',
-           'check_files',
-           'list_files',
-           'TrainMeter',
-           'smooth',
-           'ProgressBar',
-           'TestMeter',
-           'Tracer',
-           ]
+__all__ = [
+    'math',
+    'metrics',
+    'check_dirs',
+    'check_files',
+    'list_files',
+    'resize_image',
+    'smooth',
+    'ProgressBar',
+    'MovingAverage',
+    'GlobalMeter',
+    'Tracer',
+    'GlobalTracer',
+]

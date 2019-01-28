@@ -130,12 +130,12 @@ class TrainMeter(object):
         return '{:.4f} ({:.4f})'.format(self.pre, self.val)
 
 
-class TestMeter(object):
-    """Compute moving average."""
+class GlobalMeter(object):
+    """Compute global average."""
 
     def __init__(self):
         """History without moving average."""
-        self.weights = []
+        self.counts = []
         self.val = np.NaN
         self.x, self.y = [], []
 
@@ -148,19 +148,18 @@ class TestMeter(object):
     @property
     def avg(self):
         """Return fake average."""
-        v, w = np.array(self.y), np.array(self.weights)
+        v, w = np.array(self.y), np.array(self.counts)
         return np.sum(v * w) / np.sum(w)
 
     def sum(self):
         return np.sum(self.y)
 
-    def update(self, x, val, weight=1):
+    def update(self, x, val, cnt=1):
         """Update attributes."""
         self.x.append(x)
         self.y.append(val)
-        self.weights.append(weight)
+        self.counts.append(cnt)
         self.val = val
 
     def __repr__(self):
-        """Return val and avg."""
-        return '{:.4f}'.format(self.val)
+        return '{:.4f} ({:.4f})'.format(self.val, self.avg)

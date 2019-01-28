@@ -4,23 +4,49 @@ from collections import defaultdict
 import numpy as np
 from visdom import Visdom
 
-from .meter import MovingAverage
+from .meter import MovingAverage, GlobalMeter
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Tracer(object):
+class _Tracer(object):
+    """Class for tracing history."""
+
+    def __init__(self, train_meter, test_meter):
+        self._history = dict(
+            train=defaultdict(train_meter),
+            test=defaultdict(test_meter),
+        )
+
+    def get_history(self, phase):
+        return self._history[phase]
+
+    def update_history(self, phase, x: int, data: dict, **kwargs):
+        """Update the history only."""
+        history = self._history[phase]
+        for key, value in data.items():
+            history[key].update(x, value, **kwargs)
+
+    def logging(self, phase):
+        meters = self._history[phase]
+        for k, m in meters.items():
+            LOGGER.info('-------- %s: %s', k, m)
+
+
+class GlobalTracer(_Tracer):
+    def __init__(self):
+        super().__init__(GlobalMeter, GlobalMeter)
+
+
+class Tracer(_Tracer):
     """Class for tracing traning history."""
 
     def __init__(self, env='main'):
+        super().__init__(lambda: MovingAverage(win_size=50), lambda: MovingAverage(win_size=1))
         self.vis = Visdom(env=env)
         self._figure_ops = dict()
         self._registered_figures = dict()
         self._registered_lines = dict()
-        self._history = dict(
-            train=defaultdict(lambda: MovingAverage(win_size=50)),
-            test=defaultdict(lambda: MovingAverage(win_size=1)),
-        )
 
     def register_figure(self, title, xlabel, ylabel, trace_dict):
         """Register a new figure for visdom.
@@ -77,12 +103,11 @@ class Tracer(object):
             self.vis.line(X=x, Y=y, update='append', name=legend, win=win,
                           opts={'showlegend': True})
 
-    def update(self, phase, x, **data):
-        # update history
+    def update(self, phase, x: int, data: dict, **kwargs):
         history = self._history[phase]
         for key, value in data.items():
             # update history
-            history[key].update(x, value)
+            history[key].update(x, value, **kwargs)
             line_name = '{}.{}'.format(phase, key)
             # get figure id
             win = self._registered_lines.get(line_name, None)
@@ -96,14 +121,6 @@ class Tracer(object):
                     opts={'showlegend': True}
                 )
 
-    def update_history(self, phase, x, **data):
-        """Update the history only."""
-        # update history
-        history = self._history[phase]
-        for key, value in data.items():
-            # update history
-            history[key].update(x, value)
-
     def update_trace(self, x, y, phase, key):
         """Update single trace only."""
         line_name = '{}.{}'.format(phase, key)
@@ -112,3 +129,8 @@ class Tracer(object):
             legend = self._registered_figures[win][line_name]
             self.vis.line(X=x, Y=y, update='append', name=legend, win=win,
                           opts={'showlegend': True})
+
+    def logging(self, phase):
+        meters = self._history[phase]
+        for k, m in meters.items():
+            LOGGER.info('-------- %s: %s', k, m)
