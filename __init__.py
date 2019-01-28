@@ -12,7 +12,8 @@ from .datafile import resize_image
 # mode progress
 from .progress import ProgressBar
 # mode transfer
-from .transfer import TrainMeter, TestMeter, MovingAverage, smooth
+from .meter import TrainMeter, TestMeter, MovingAverage, smooth
+from .tracer import Tracer
 
 _COLORS = dict(
     Red='\033[91m',
@@ -145,4 +146,5 @@ __all__ = ['metrics',
            'smooth',
            'ProgressBar',
            'TestMeter',
+           'Tracer',
            ]

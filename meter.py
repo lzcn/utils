@@ -4,15 +4,18 @@ from collections import deque
 import numpy as np
 
 
-def smooth(xs, average=10):
+def smooth(xs, win_size=10):
     """Average smooth for 1d signal."""
-    weights = np.ones(average) / average
+    if len(xs) < win_size:
+        return _smooth(xs, win_size)
+    weights = np.ones(win_size) / win_size
     data = np.convolve(xs, weights, mode='valid')
-    pre = _smooth(xs[:average - 1], average)
+    pre = _smooth(xs[:win_size - 1], win_size)
     return np.hstack((pre, data))
 
 
-def _smooth(xs, average=10):
+def _smooth(xs, win_size=10):
+    """Slow verison."""
     x_buffer = []
     s_xs = 0
     xs = np.array(xs) * 1.0
@@ -20,51 +23,69 @@ def _smooth(xs, average=10):
     num = xs.size
     for i in range(num):
         x = xs[i]
-        if len(x_buffer) < average:
+        if len(x_buffer) < win_size:
             x_buffer.append(x)
             size = len(x_buffer)
             s_xs = (s_xs * (size - 1) + x) / size
             smoothed_xs[i] = s_xs
         else:
-            idx = i % average
-            s_xs += (x - x_buffer[idx]) / average
+            idx = i % win_size
+            s_xs += (x - x_buffer[idx]) / win_size
             x_buffer[idx] = x
             smoothed_xs[i] = s_xs
     return smoothed_xs
 
 
 class MovingAverage(object):
-    """Compute moving average."""
+    """History recorder with moving average."""
 
     def __init__(self, win_size=50):
         """Average meter for criterions."""
-        self.val = 0
-        self.smooth = deque(maxlen=win_size)
+        self.x = []
+        self.y = []
+        self.val = np.nan
+        self._queue = deque(maxlen=win_size)
+        self._smooth = False if win_size == 1 else True
+        self.win_size = win_size
 
-    def reset(self, history=None):
+    def reset(self,):
         """Reset all attribute."""
-        self.val = 0
-        self.smooth.clear()
-        if history:
-            for val in history:
-                self.update(val)
+        self.val = np.nan
+        self.x = []
+        self.y = []
+        self._queue.clear()
 
     @property
     def avg(self):
         """Return moving average."""
         try:
-            return sum(self.smooth) / len(self.smooth)
+            return sum(self._queue) / len(self._queue)
         except ZeroDivisionError:
-            return np.NaN
+            return np.nan
 
-    def update(self, val):
+    def update(self, x, y):
         """Update attributes."""
-        self.smooth.append(val)
-        self.val = val
+        self.x.append(x)
+        self.y.append(y)
+        self._queue.append(y)
+        self.val = y
+
+    def numpy(self):
+        """Retrun smoothed numpy history until now."""
+        x = np.array(self.x)
+        if self._smooth:
+            y = smooth(self.y, self.win_size)
+        else:
+            y = np.array(self.y)
+        return x, y
 
     def __repr__(self):
         """Return val and avg."""
-        return '{:.4f} ({:.4f})'.format(self.val, self.avg)
+        if self._smooth:
+            msg = '{:.4f} ({:.4f})'.format(self.val, self.avg)
+        else:
+            msg = '{:.4f}'.format(self.val)
+        return msg
 
 
 class TrainMeter(object):
