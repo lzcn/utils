@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import tqdm
 from pathlib import Path
-import polyvore.config as cfg
 from .check import check_dirs
 
 
