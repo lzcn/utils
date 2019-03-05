@@ -32,7 +32,7 @@ _COLORS = dict(
 def colour(string, color='Green'):
     """Colour string."""
     color = _COLORS.get(color.capitalize(), 'Default')
-    result = '{}{}{}'.format(_COLORS[color], string, _COLORS['Default'])
+    result = '{}{}{}'.format(color, string, _COLORS['Default'])
     return result
 
 
