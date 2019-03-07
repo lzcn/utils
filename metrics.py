@@ -18,7 +18,7 @@ def _canonical(posi, nega):
     Return
     ------
     y_true: true label 0 for negative sample and 1 for positive
-    y_score: predicted score for correspoding samples
+    y_score: predicted score for corresponding samples
 
     """
     posi, nega = np.array(posi), np.array(nega)
@@ -85,7 +85,7 @@ def NDCG(posi, nega, wtype='max'):
 
     Parameters
     ----------
-    posi: positive socres for each user.
+    posi: positive scores for each user.
     nega: negative scores for each user.
     wtype: type for discounts
 
@@ -114,7 +114,7 @@ def ndcg_score(y_score, y_label, wtype='max'):
     y_score : array, shape = [n_samples]
         Predicted scores.
     y_label : array, shape = [n_samples]
-        Ground truth lambel (binary).
+        Ground truth label (binary).
     wtype : 'log' or 'max'
         type for discounts
     Returns
@@ -126,7 +126,7 @@ def ndcg_score(y_score, y_label, wtype='max'):
            A functional tensor factorization approach[C]
            Proceedings of the 23rd ACM international conference on Multimedia.
            ACM, 2015: 129-138.
-       [2] Lee C P, Lin C J. Large-scale linear ranksvm[J].
+       [2] Lee C P, Lin C J. Large-scale Linear RankSVM[J].
            Neural computation, 2014, 26(4): 781-817.
 
     """
@@ -200,7 +200,7 @@ def CalcAUC(sim, pos, neg):
     ----------
     sim: similarity matrix
     """
-    # Compute the score for posive links and negative links
+    # Compute the score for positive links and negative links
     pos_scores = np.asarray(sim[pos[0], pos[1]]).squeeze()
     neg_scores = np.asarray(sim[neg[0], neg[1]]).squeeze()
     scores = np.concatenate([pos_scores, neg_scores])

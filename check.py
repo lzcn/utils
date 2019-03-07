@@ -40,25 +40,25 @@ def _check_dir(folder, action='check', verbose=False):
     exists = os.path.isdir(folder)
     if not exists:
         if action == 'mkdir':
-            # make dirs recursively
+            # make directories recursively
             os.makedirs(folder)
             exists = True
             LOGGER.info("folder '%s' has been created.", folder)
         if action == 'check' and verbose:
-            LOGGER.info("folder '%s' does not exiets.", folder)
+            LOGGER.info("folder '%s' does not exist.", folder)
     else:
         if verbose:
-            LOGGER.info("folder '%s' exiets.", folder)
+            LOGGER.info("folder '%s' exist.", folder)
     return exists
 
 
 def check_files(file_list, mode='any', verbose=False):
-    """Check whether files exist, optiaonl modes are ['all','any']."""
+    """Check whether files exist, optional modes are ['all','any']."""
     n_file = len(file_list)
     opt_modes = ['all', 'any']
     ops = {'any': any, 'all': all}
     if mode not in opt_modes:
-        LOGGER.info('Wrong choice of mode, optiaonl modes %s', opt_modes)
+        LOGGER.info('Wrong choice of mode, optional modes %s', opt_modes)
         return False
     exists = [os.path.isfile(fn) for fn in file_list]
     if verbose:
@@ -74,7 +74,7 @@ def check_exists(lists, mode='any', verbose=False):
     opt_modes = ['all', 'any']
     ops = {'any': any, 'all': all}
     if mode not in opt_modes:
-        LOGGER.info("Wrong choice of mode, optiaonl modes {}".format(opt_modes))
+        LOGGER.info("Wrong choice of mode, optional modes %s", opt_modes)
         return False
     exists = [os.path.exists(fn) for fn in lists]
     if verbose:
@@ -90,7 +90,7 @@ def list_files(folder, suffix='', recursive=False):
     Parameters
     ----------
     suffix: filename must end with suffix if given, it can also be a tuple
-    recursive: if recursive, return sub-pathes
+    recursive: if recursive, return sub-paths
     """
     files = []
     if recursive:

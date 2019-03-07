@@ -1,12 +1,10 @@
 """Utils to handle data files."""
 import os
-import cv2
-import shutil
+
 import numpy as np
 import pandas as pd
-import tqdm
-from pathlib import Path
-from .check import check_dirs
+
+import cv2
 
 
 def read_csv(fn)->np.array:
