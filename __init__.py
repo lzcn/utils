@@ -1,19 +1,10 @@
 """Mode utility."""
-import collections
-
 import torch
 
 # mode metrics
-from . import math, metrics
-# mode check
-from .check import check_dirs, check_files, list_files
+from . import math, meter, metrics, tracer, check
 # mode datafile
 from .datafile import resize_image
-# mode progress
-from .progress import ProgressBar
-# mode transfer
-from .meter import GlobalMeter, MovingAverage, smooth
-from .tracer import Tracer, GlobalTracer
 
 _COLORS = dict(
     Red='\033[91m',
@@ -30,7 +21,7 @@ _COLORS = dict(
 
 
 def colour(string, color='Green'):
-    """Colour string."""
+    """Add color for string."""
     color = _COLORS.get(color.capitalize(), 'Default')
     result = '{}{}{}'.format(color, string, _COLORS['Default'])
     return result
@@ -43,7 +34,7 @@ def get_named_class(module):
 
 
 def one_hot(uidx, num):
-    """Convert the index to ont-hot encoding."""
+    """Convert the index to one-hot encoding."""
     uidx = uidx.view(-1, 1)
     return torch.zeros(uidx.numel(), num).scatter_(1, uidx, 1.0)
 
@@ -67,22 +58,13 @@ def get_device(gpus):
 
 def to_device(data, device):
     """Move data to device."""
+    from collections import Sequence
     error_msg = "data must contain tensors or lists; found {}"
-    if isinstance(data, collections.Sequence):
+    if isinstance(data, Sequence):
         return tuple(to_device(v, device) for v in data)
     elif isinstance(data, torch.Tensor):
         return data.to(device)
     raise TypeError((error_msg.format(type(data))))
-
-
-class NoneAttrClass():
-    """Class with attributes are all None."""
-
-    def __str__(self):
-        return "Non-attribute class."
-
-    def __getattr__(self, name):
-        return None
 
 
 def config_log(stream_level='DEBUG', file_level='INFO', log_file=None):
@@ -108,12 +90,12 @@ def config_log(stream_level='DEBUG', file_level='INFO', log_file=None):
             }
         },
         'handlers': {
-            'stream': {  # config stream hanlder
+            'stream': {  # config stream handler
                 'class': 'logging.StreamHandler',
                 'level': stream_level,
                 'formatter': 'simple',
             },
-            'file': {  # config file hanlder
+            'file': {  # config file handler
                 'class': 'logging.FileHandler',
                 'level': file_level,
                 'formatter': 'simple',
@@ -137,15 +119,8 @@ def config_log(stream_level='DEBUG', file_level='INFO', log_file=None):
 
 __all__ = [
     'math',
+    'check',
+    'tracer',
+    'meter',
     'metrics',
-    'check_dirs',
-    'check_files',
-    'list_files',
-    'resize_image',
-    'smooth',
-    'ProgressBar',
-    'MovingAverage',
-    'GlobalMeter',
-    'Tracer',
-    'GlobalTracer',
 ]
