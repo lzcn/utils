@@ -3,40 +3,12 @@ from collections import deque
 
 import numpy as np
 
+from utils.math import smooth
 
-def smooth(xs, win_size=10):
-    """Average smooth for 1d signal."""
-    if len(xs) < win_size:
-        return _smooth(xs, win_size)
-    weights = np.ones(win_size) / win_size
-    data = np.convolve(xs, weights, mode='valid')
-    pre = _smooth(xs[:win_size - 1], win_size)
-    return np.hstack((pre, data))
+# TODO: merge two meters into one class
 
 
-def _smooth(xs, win_size=10):
-    """Slow verison."""
-    x_buffer = []
-    s_xs = 0
-    xs = np.array(xs) * 1.0
-    smoothed_xs = np.zeros_like(xs)
-    num = xs.size
-    for i in range(num):
-        x = xs[i]
-        if len(x_buffer) < win_size:
-            x_buffer.append(x)
-            size = len(x_buffer)
-            s_xs = (s_xs * (size - 1) + x) / size
-            smoothed_xs[i] = s_xs
-        else:
-            idx = i % win_size
-            s_xs += (x - x_buffer[idx]) / win_size
-            x_buffer[idx] = x
-            smoothed_xs[i] = s_xs
-    return smoothed_xs
-
-
-class MovingAverage(object):
+class AvgMeter(object):
     """History recorder with moving average."""
 
     def __init__(self, win_size=50):
@@ -45,10 +17,9 @@ class MovingAverage(object):
         self.y = []
         self.val = np.nan
         self._queue = deque(maxlen=win_size)
-        self._smooth = False if win_size == 1 else True
         self.win_size = win_size
 
-    def reset(self,):
+    def reset(self):
         """Reset all attribute."""
         self.val = np.nan
         self.x = []
@@ -71,95 +42,62 @@ class MovingAverage(object):
         self.val = y
 
     def numpy(self):
-        """Retrun smoothed numpy history until now."""
-        x = np.array(self.x)
-        if self._smooth:
-            y = smooth(self.y, self.win_size)
-        else:
-            y = np.array(self.y)
-        return x, y
-
-    def __repr__(self):
-        """Return val and avg."""
-        if self._smooth:
-            msg = '{:.4f} ({:.4f})'.format(self.val, self.avg)
-        else:
-            msg = '{:.4f}'.format(self.val)
-        return msg
-
-
-class TrainMeter(object):
-    """Compute moving average."""
-
-    def __init__(self, win_size=50):
-        """Average meter for criterions."""
-        self.x, self.y = [], []
-        self.pre = np.NaN
-        self.win_size = win_size
-        self.data = deque(maxlen=win_size)
-
-    def numpy(self):
-        """Retrun smoothed numpy history until now."""
+        """Return smoothed numpy array history until now."""
         x = np.array(self.x)
         y = smooth(self.y, self.win_size)
         return x, y
 
-    def reset(self):
-        """Reset all attribute."""
-        self.pre = np.NaN
-        self.x, self.y = [], []
-        self.data.clear()
-
-    @property
-    def val(self):
-        """Return moving average value."""
-        try:
-            return sum(self.data) / len(self.data)
-        except ZeroDivisionError:
-            return np.NaN
-
-    def update(self, x, val):
-        """Update attributes."""
-        self.x.append(x)
-        self.y.append(val)
-        self.data.append(val)
-        self.pre = val
-
     def __repr__(self):
         """Return val and avg."""
-        return '{:.4f} ({:.4f})'.format(self.pre, self.val)
+        msg = '{:.4f} ({:.4f})'.format(self.val, self.avg)
+        return msg
 
 
 class GlobalMeter(object):
-    """Compute global average."""
+    """Compute global average with weights."""
 
     def __init__(self):
         """History without moving average."""
-        self.counts = []
+        self.x = []
+        self.y = []
+        self.weights = []
         self.val = np.NaN
-        self.x, self.y = [], []
+        self._cum_val = 0.0
+        self._cum_weight = 0.0
 
     def numpy(self):
-        """Retrun history until now as numpy array."""
+        """Return history until now as numpy array."""
         x = np.array(self.x)
-        y = np.array(self.y)
+        v, w = np.array(self.y), np.array(self.weights)
+        y = np.cumsum(v * w) / np.cumsum(w)
         return x, y
 
     @property
     def avg(self):
         """Return fake average."""
-        v, w = np.array(self.y), np.array(self.counts)
-        return np.sum(v * w) / np.sum(w)
+        try:
+            return self._cum_val / self._cum_weight
+        except ZeroDivisionError:
+            return np.nan
 
-    def sum(self):
-        return np.sum(self.y)
-
-    def update(self, x, val, cnt=1):
+    def update(self, x, val, weight=1):
         """Update attributes."""
         self.x.append(x)
         self.y.append(val)
-        self.counts.append(cnt)
+        self.weights.append(weight)
         self.val = val
+        self._cum_val += val * weight
+        self._cum_weight += weight
 
     def __repr__(self):
         return '{:.4f} ({:.4f})'.format(self.val, self.avg)
+
+
+def MeterFactory(win_size=1):
+    assert win_size >= 0, "win_size must be non-negative."
+
+    def meter():
+        return AvgMeter(win_size=win_size)
+    if win_size == 0:
+        return GlobalMeter
+    return meter

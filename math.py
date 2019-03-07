@@ -3,6 +3,41 @@ import torch
 import torch.nn as nn
 
 
+def smooth(xs, win_size=10):
+    """Average smooth for 1d signal."""
+    assert win_size > 0, "win_size should be positive."
+    if win_size == 1:
+        return np.array(xs)
+    if len(xs) < win_size:
+        return _smooth(xs, win_size)
+    weights = np.ones(win_size) / win_size
+    data = np.convolve(xs, weights, mode='valid')
+    pre = _smooth(xs[:win_size - 1], win_size)
+    return np.hstack((pre, data))
+
+
+def _smooth(xs, win_size=10):
+    """Slower version for smooth."""
+    x_buffer = []
+    s_xs = 0
+    xs = np.array(xs) * 1.0
+    smoothed_xs = np.zeros_like(xs)
+    num = xs.size
+    for i in range(num):
+        x = xs[i]
+        if len(x_buffer) < win_size:
+            x_buffer.append(x)
+            size = len(x_buffer)
+            s_xs = (s_xs * (size - 1) + x) / size
+            smoothed_xs[i] = s_xs
+        else:
+            idx = i % win_size
+            s_xs += (x - x_buffer[idx]) / win_size
+            x_buffer[idx] = x
+            smoothed_xs[i] = s_xs
+    return smoothed_xs
+
+
 def glorot_uniform(t, gain):
     if len(t.size()) == 2:
         fan_in, fan_out = t.size()
