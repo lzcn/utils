@@ -1,15 +1,16 @@
 """Create simple html file."""
-import dominate
-import dominate.tags as htags
 import os
 
+import dominate
+import dominate.tags as htags
 
-class SimpleHtml:
+
+class WebPage(object):
     """Simple html file contains concise elements."""
 
     def __init__(self, web_dir, title, reflesh=0):
         """Create a html file with concise elements."""
-        # the title of SimpleHtml
+        # the title of the page
         self.title = title
         # dir to save the web page
         self.web_dir = web_dir
@@ -26,9 +27,9 @@ class SimpleHtml:
             with self.doc.head:
                 htags.meta(http_equiv="reflesh", content=str(reflesh))
 
-    def add_header(self, str):
+    def add_header(self, info):
         """Add h3 header."""
-        self.doc.add(htags.h3(str))
+        self.doc.add(htags.h3(info))
         return self.doc
 
     def add_table(self, border=1):
@@ -43,15 +44,13 @@ class SimpleHtml:
         tr = table.add(htags.tr())
         with tr:
             for im, txt, link in zip(ims, txts, links):
-                with htags.td(
-                        style="word-wrap: break-word;",
-                        halign="center",
-                        valign="top"):
+                with htags.td(style="word-wrap: break-word;",
+                              halign="center",
+                              valign="top"):
                     with htags.p():
                         with htags.a(href=os.path.join('images', link)):
-                            htags.img(
-                                style="width:%dpx" % width,
-                                src=os.path.join('images', im))
+                            htags.img(style="width:%dpx" % width,
+                                      src=os.path.join('images', im))
                         htags.br()
                         htags.p(txt)
 
@@ -64,7 +63,7 @@ class SimpleHtml:
 
 
 if __name__ == '__main__':
-    html = SimpleHtml('web/', 'test_html')
+    html = WebPage('web/', 'test_html')
     html.add_header('hello world')
 
     ims = []
