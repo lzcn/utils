@@ -67,12 +67,12 @@ class GroupTracer(object):
 
     Parameter
     ---------
-    dyadic_win_size: set the window size for meters in each group 
+    group_win_size: set the window size for meters in each group
     """
 
-    def __init__(self, **dyadic_win_size):
+    def __init__(self, **group_win_size):
         # create meter factories for each group
-        self._groups = {g: Tracer(s) for g, s in dyadic_win_size.items()}
+        self._groups = {g: Tracer(s) for g, s in group_win_size.items()}
 
     def get_meter(self, group, key):
         try:
@@ -116,13 +116,13 @@ class GroupPlotTracer(GroupTracer):
     Parameter
     ---------
     env: environment for visdom plotting
-    dyadic_win_size: set the window size for meters in each group
+    group_win_size: set the window size for meters in each group
     """
 
-    def __init__(self, env='main', **dyadic_win_size):
-        super().__init__(**dyadic_win_size)
+    def __init__(self, env='main', **group_win_size):
+        super().__init__(**group_win_size)
         self.vis = Visdom(env=env)
-        self._figure_opts = dict()
+        self._figure_cfg = dict()
         self._registered_figures = dict()
         self._registered_lines = dict()
 
@@ -164,28 +164,36 @@ class GroupPlotTracer(GroupTracer):
         legend = list(trace_dict.values())
         x = np.zeros(1)
         y = np.ones((1, num_trace)) * np.nan
-        self._trace_dict = trace_dict
-        self._figures = dict(
+        opts = dict(title=title, xlabel=xlabel, ylabel=ylabel, legend=legend)
+        win = self.vis.line(X=x, Y=y, opts=opts)
+        self._figure_cfg[win] = dict(
             title=title, xlabel=xlabel, ylabel=ylabel, trace_dict=trace_dict)
-        self._win = self.vis.line(X=x, Y=y, opts=dict(
-            title=title, xlabel=xlabel, ylabel=ylabel, legend=legend))
+        self._registered_figures[win] = trace_dict
+        for line in trace_dict.keys():
+            self._registered_lines[line] = win
         # logging
-        LOGGER.info('Registered lines (#%s):', self._win)
-        self.logging()
-        return self._win
+        LOGGER.info('Registered lines (#%s)', win)
+        return win
 
     def state_dict(self):
         state_dict = dict()
         state_dict['_groups'] = super().state_dict()
-        state_dict['_figures'] = self._figures
+        state_dict['_figure_cfg'] = self._figure_cfg
+        state_dict['_registered_figures'] = self._registered_figures
+        state_dict['_registered_lines'] = self._registered_lines
         return state_dict
 
     def load_state_dict(self, state_dict):
         super().load_state_dict(state_dict['_groups'])
-        self.register_figure(**state_dict['_figures'])
         LOGGER.info('Re-plotting lines.')
+        old_cfg = state_dict['_figure_cfg']
+        old_figures = state_dict['_registered_figures']
+        old_lines = state_dict['_registered_lines']
+        for cfg in old_cfg.values():
+            self.register_figure(**cfg)
         # re-plot lines
-        for line, legend in self._trace_dict.items():
+        for line, old_win in old_lines.items():
+            legend = old_figures[old_win][line]
             group, key = line.split('.')
             x, y = self.get_meter(group, key).numpy()
             self.vis.line(
@@ -199,13 +207,12 @@ class GroupPlotTracer(GroupTracer):
             # update history
             meter = self.get_meter(group, key)
             line = '{}.{}'.format(group, key)
-            if self._win:
+            win = self._registered_lines.get(line, None)
+            if win:
+                legend = self._registered_figures[win][line]
                 self.vis.line(
-                    X=np.array([x]),
-                    Y=np.array([meter.avg]),
-                    name=self._trace_dict[line],
-                    win=self._win,
-                    update='append',
+                    X=np.array([x]), Y=np.array([meter.avg]),
+                    name=legend, win=win, update='append',
                     opts={'showlegend': True}
                 )
 
@@ -214,11 +221,9 @@ class GroupPlotTracer(GroupTracer):
         line = '{}.{}'.format(group, key)
         win = self._registered_lines.get(line, None)
         if win:
+            legend = self._registered_figures[win][line]
             self.vis.line(
-                X=x,
-                Y=y,
-                name=self._trace_dict[line],
-                win=self._win,
-                update='append',
+                X=x, Y=y,
+                name=legend, win=win, update='append',
                 opts={'showlegend': True}
             )

@@ -34,7 +34,7 @@ class AvgMeter(object):
         except ZeroDivisionError:
             return np.nan
 
-    def update(self, x, y):
+    def update(self, x, y, **kwargs):
         """Update attributes."""
         self.x.append(x)
         self.y.append(y)
