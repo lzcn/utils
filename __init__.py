@@ -20,6 +20,16 @@ _COLORS = dict(
 )
 
 
+def singleton(cls):
+    _instance = {}
+
+    def inner(*args, **kwargs):
+        if cls not in _instance:
+            _instance[cls] = cls(*args, **kwargs)
+        return _instance[cls]
+    return inner
+
+
 def colour(string, color='Green'):
     """Add color for string."""
     color = _COLORS.get(color.capitalize(), 'Default')
@@ -31,6 +41,12 @@ def get_named_class(module):
     """Get the class member in module."""
     from inspect import isclass
     return {k: v for k, v in module.__dict__.items() if isclass(v)}
+
+
+def get_named_function(module):
+    """Get the class member in module."""
+    from inspect import isfunction
+    return {k: v for k, v in module.__dict__.items() if isfunction(v)}
 
 
 def one_hot(uidx, num):
