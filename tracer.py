@@ -193,13 +193,15 @@ class GroupPlotTracer(GroupTracer):
             self.register_figure(**cfg)
         # re-plot lines
         for line, old_win in old_lines.items():
-            legend = old_figures[old_win][line]
-            group, key = line.split('.')
-            x, y = self.get_meter(group, key).numpy()
-            self.vis.line(
-                X=x, Y=y, update='append', name=legend,
-                win=self._win, opts={'showlegend': True}
-            )
+            win = self._registered_lines.get(line, None)
+            if win:
+                legend = old_figures[old_win][line]
+                group, key = line.split('.')
+                x, y = self.get_meter(group, key).numpy()
+                self.vis.line(
+                    X=x, Y=y, update='append', name=legend,
+                    win=win, opts={'showlegend': True}
+                )
 
     def update(self, group, x: int, data: dict, **kwargs):
         self.update_history(group, x, data, **kwargs)
