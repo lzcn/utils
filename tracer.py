@@ -205,7 +205,11 @@ class GroupPlotTracer(GroupTracer):
 
     def update(self, group, x: int, data: dict, **kwargs):
         self.update_history(group, x, data, **kwargs)
-        for key in data.keys():
+        self.update_trace(group, x, data.keys())
+
+    def update_trace(self, group, x: int, keys):
+        """Update single trace only."""
+        for key in keys:
             # update history
             meter = self.get_meter(group, key)
             line = '{}.{}'.format(group, key)
@@ -217,15 +221,3 @@ class GroupPlotTracer(GroupTracer):
                     name=legend, win=win, update='append',
                     opts={'showlegend': True}
                 )
-
-    def update_trace(self, x, y, group, key):
-        """Update single trace only."""
-        line = '{}.{}'.format(group, key)
-        win = self._registered_lines.get(line, None)
-        if win:
-            legend = self._registered_figures[win][line]
-            self.vis.line(
-                X=x, Y=y,
-                name=legend, win=win, update='append',
-                opts={'showlegend': True}
-            )
