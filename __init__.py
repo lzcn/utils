@@ -52,7 +52,8 @@ def get_named_function(module):
 def one_hot(uidx, num):
     """Convert the index to one-hot encoding."""
     uidx = uidx.view(-1, 1)
-    return torch.zeros(uidx.numel(), num).scatter_(1, uidx, 1.0)
+    one_hot = torch.zeros(uidx.numel(), num).to(uidx.device)
+    return one_hot.scatter_(1, uidx, 1.0)
 
 
 def get_device(gpus):
