@@ -80,6 +80,16 @@ def ROC(posi, nega):
     return (aucs, mean_auc)
 
 
+def calc_AUC(posi, nega):
+    _, avg_auc = ROC(posi, nega)
+    return avg_auc
+
+
+def calc_NDCG(posi, nega):
+    mean_ndcg, _ = NDCG(posi, nega)
+    return mean_ndcg.mean()
+
+
 def NDCG(posi, nega, wtype='max'):
     """Mean Normalize Discounted cumulative gain (NDCG).
 
