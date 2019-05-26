@@ -1,13 +1,13 @@
 """Check utils mod."""
 import os
-
+import collections
 import logging
 LOGGER = logging.getLogger(__name__)
 
 
 def check_dirs(folders, action='check', mode='all', verbose=False):
     """Check whether all folders exist."""
-    falgs = []
+    flags = []
     if action.lower() not in ['check', 'mkdir']:
         raise ValueError("{} not in ['check', 'mkdir']".format(action.lower()))
     if mode.lower() not in ['all', 'any']:
@@ -15,12 +15,12 @@ def check_dirs(folders, action='check', mode='all', verbose=False):
     ops = {'any': any, 'all': all}
     if verbose:
         LOGGER.info('Checked folder(s):')
-    if isinstance(folders, list):
+    if isinstance(folders, collections.Iterable):
         for folder in folders:
-            falgs.append(_check_dir(folder, action, verbose))
+            flags.append(_check_dir(folder, action, verbose))
     else:
-        falgs.append(_check_dir(folders, action, verbose))
-    return ops[mode](falgs)
+        flags.append(_check_dir(folders, action, verbose))
+    return ops[mode](flags)
 
 
 def _check_dir(folder, action='check', verbose=False):
@@ -84,7 +84,7 @@ def check_exists(lists, mode='any', verbose=False):
     return ops[mode](exists)
 
 
-def list_files(folder, suffix='', recursive=False):
+def list_files(folder='./', suffix='', recursive=False):
     """List all files.
 
     Parameters
@@ -95,8 +95,7 @@ def list_files(folder, suffix='', recursive=False):
     files = []
     if recursive:
         for path, _, fls in os.walk(folder):
-            files += [os.path.join(path, f)
-                      for f in fls if f.endswith(suffix)]
+            files += [os.path.join(path, f) for f in fls if f.endswith(suffix)]
     else:
         files = [f for f in os.listdir(folder) if f.endswith(suffix)]
     return files
