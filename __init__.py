@@ -21,6 +21,18 @@ _COLORS = dict(
 
 
 def singleton(cls):
+    """Decorator for singleton class.
+
+    Usage:
+    ------
+        >>> @utils.singleton
+        >>> class A(object):
+        >>>    ...
+        >>> x = A()
+        >>> y = A()
+        >>> assert id(x) == id(y)
+
+    """
     _instance = {}
 
     def inner(*args, **kwargs):
@@ -56,14 +68,21 @@ def one_hot(uidx, num):
     return one_hot.scatter_(1, uidx, 1.0)
 
 
-def get_device(gpus):
-    """Get device from gpus information.
+def get_device(gpus=None):
+    """Decide which device to use for data when given gpus.
+
+    If use multiple GPUs, then data only need to stay in CPU.
+    If use single GPU, then data must move to that GPU.
 
     Returns
     -------
     parallel: True if len(gpus) > 1
-    device: if parallel then device is cpu.
+    device: if parallel or gpus is empty then device is cpu.
     """
+    if not gpus:
+        parallel = False
+        device = torch.device('cpu')
+        return parallel, device
     if len(gpus) > 1:
         parallel = True
         device = torch.device('cpu')
